@@ -1,0 +1,720 @@
+<html data-type="html" data-identifier="e09541a5-3307-430f-9cc8-8a581e10c911" data-title="Resource Efforts Insights Tool" data-version="8" width="1300" height="900"><head>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;height:100vh;overflow:hidden}
+.app-header{background:linear-gradient(135deg,#1a3a5c,#2d5a8e);color:white;padding:11px 20px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+.app-header-left{display:flex;align-items:center;gap:10px}
+.app-header span.logo{font-size:22px}
+.app-header h1{font-size:15px;font-weight:600}
+.cycle-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);padding:5px 12px;border-radius:20px;font-size:11.5px;display:flex;align-items:center;gap:6px}
+.cycle-dot{width:7px;height:7px;background:#2ecc71;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+.tab-bar{display:flex;background:#12283d;padding:0 20px;gap:2px}
+.tab-btn{padding:9px 20px;background:transparent;color:#aaa;border:none;cursor:pointer;font-size:13px;border-bottom:3px solid transparent;transition:all .2s;font-family:inherit}
+.tab-btn.active{color:#4fc3f7;border-bottom-color:#4fc3f7;background:rgba(79,195,247,.08)}
+.tab-btn:hover:not(.active){color:#ddd;background:rgba(255,255,255,.04)}
+.sheet{display:none;height:calc(100vh - 92px);overflow-y:auto}
+.sheet.active{display:block}
+.toolbar{padding:9px 16px;background:white;border-bottom:1px solid #e5e5e5;display:flex;gap:7px;align-items:center;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.toolbar-sep{width:1px;height:24px;background:#e0e0e0;margin:0 3px}
+.btn{padding:6px 13px;border:none;border-radius:5px;cursor:pointer;font-size:12.5px;font-weight:500;transition:all .18s;font-family:inherit;display:flex;align-items:center;gap:5px}
+.btn-primary{background:#2d5a8e;color:white}.btn-primary:hover{background:#1a3a5c}
+.btn-success{background:#219a52;color:white}.btn-success:hover{background:#186f3b}
+.btn-danger{background:#c0392b;color:white}.btn-danger:hover{background:#922b21}
+.btn-import{background:linear-gradient(135deg,#f39c12,#e67e22);color:white}
+.btn-outline{background:white;color:#555;border:1px solid #ddd}.btn-outline:hover{background:#f5f5f5}
+.btn-ghost{background:transparent;color:#888;border:1px dashed #ccc}.btn-ghost:hover{background:#f9f9f9;color:#555}
+.row-count{font-size:12px;color:#999;margin-left:auto}
+.drop-zone-wrap{padding:20px}
+.drop-zone{border:2px dashed #b0c4de;border-radius:12px;padding:36px 20px;text-align:center;background:white;transition:all .2s;cursor:pointer}
+.drop-zone.drag-over{border-color:#2d5a8e;background:#f0f6ff}
+.dz-icon{font-size:40px;margin-bottom:9px}
+.drop-zone h3{font-size:15px;color:#333;margin-bottom:5px}
+.drop-zone p{font-size:12px;color:#888;margin-bottom:14px}
+.btn-upload{display:inline-flex;align-items:center;gap:6px;background:#2d5a8e;color:white;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit}
+.headers-preview{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0}
+.hdr-pill{font-size:11px;padding:3px 9px;border-radius:20px;background:#eef4ff;color:#2d5a8e;border:1px solid #c8dbf5;font-weight:500}
+.hdr-pill.new{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+.table-container{padding:14px 16px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);font-size:12.5px}
+thead tr{background:linear-gradient(90deg,#1e3d6e,#2d5a8e);color:white}
+thead th{padding:9px 9px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f0f0f0;transition:background .12s}
+tbody tr:hover{background:#f5f9ff}
+tbody tr.imported-row{background:#fdfff5}
+tbody td{padding:4px 7px}
+tbody td input,tbody td select{width:100%;padding:5px 7px;border:1px solid transparent;border-radius:4px;font-size:12px;background:transparent;color:#333;font-family:inherit}
+tbody td input:focus,tbody td select:focus{border-color:#2d5a8e;background:white;outline:none;box-shadow:0 0 0 2px rgba(45,90,142,.1)}
+/* ✅ Updated cycle chip - wider for "Mon, May 18" format */
+.cycle-chip{display:inline-block;font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600;white-space:nowrap;cursor:help;max-width:160px}
+.row-num{color:#bbb;font-size:11px;text-align:center;width:28px}
+.del-btn{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:3px 7px;border-radius:4px}
+.del-btn:hover{background:#fdf0ef}
+.src-badge{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:600}
+.src-excel{background:#e8f5e9;color:#2e7d32}
+.src-manual{background:#e3f2fd;color:#1565c0}
+.src-api{background:#f3e5f5;color:#6a1b9a}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,20,40,.6);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.hidden{display:none}
+.modal{background:white;border-radius:12px;width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{background:linear-gradient(135deg,#1a3a5c,#2d5a8e);color:white;padding:15px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:10px}
+.modal-header h3{font-size:15px;flex:1}
+.modal-close{background:rgba(255,255,255,.15);border:none;color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.modal-body{padding:18px}
+.file-info{background:#f8faff;border:1px solid #dde8f5;border-radius:8px;padding:11px 13px;margin-bottom:14px;display:flex;align-items:center;gap:11px}
+.file-icon{font-size:26px}
+.file-details h4{font-size:13px;color:#1a3a5c;font-weight:600}
+.file-details p{font-size:11px;color:#888;margin-top:2px}
+.section-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#888;font-weight:700;margin-bottom:7px}
+.mapping-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
+.mapping-table th{background:#f0f4fa;padding:7px 9px;text-align:left;color:#666;font-weight:600;font-size:10.5px;text-transform:uppercase}
+.mapping-table td{padding:7px 9px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+.mapping-table tr:last-child td{border-bottom:none}
+.map-status{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+.map-ok{background:#e8f5e9}.map-warn{background:#fff8e1}.map-err{background:#ffeaea}
+.found-as{font-size:10.5px;color:#555;background:#f0f4fa;padding:2px 6px;border-radius:4px;font-family:monospace;max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.import-mode{background:#f8faff;border:1px solid #dde8f5;border-radius:8px;padding:11px 13px;margin-bottom:14px}
+.radio-opt{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12.5px;color:#444}
+.radio-opt input{cursor:pointer;accent-color:#2d5a8e}
+.row-summary{display:flex;gap:9px;margin-bottom:14px}
+.rsumm-card{flex:1;background:#f8faff;border:1px solid #dde8f5;border-radius:7px;padding:9px 11px;text-align:center}
+.rsumm-val{font-size:19px;font-weight:700;color:#2d5a8e}
+.rsumm-lbl{font-size:10px;color:#888;text-transform:uppercase;margin-top:2px}
+.modal-footer{padding:13px 18px;border-top:1px solid #f0f0f0;display:flex;justify-content:flex-end;gap:9px}
+.warn-banner{background:#fff8e1;border:1px solid #ffe082;border-radius:7px;padding:9px 11px;font-size:12px;color:#7d5a00;margin-bottom:12px;display:flex;gap:7px;align-items:flex-start}
+.toast{position:fixed;bottom:20px;right:20px;padding:11px 17px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;align-items:center;gap:7px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#219a52;color:white}
+.toast.error{background:#c0392b;color:white}
+.toast.info{background:#2d5a8e;color:white}
+/* ─── REPORT ─────────────────────────────────────────────── */
+.report-wrap{padding:16px}
+.rpt-header{background:linear-gradient(135deg,#1a3a5c,#2d5a8e);color:white;padding:16px 20px;border-radius:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.rpt-header h2{font-size:17px}.rpt-header p{font-size:11.5px;opacity:.75;margin-top:3px}
+.rpt-header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.cycle-info-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:6px 13px;border-radius:8px;font-size:11.5px;text-align:right;line-height:1.5}
+.refresh-btn{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.25);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit}
+.refresh-btn:hover{background:rgba(255,255,255,.25)}
+/* ✅ Cycle explanation banner */
+.cycle-explain{display:flex;align-items:flex-start;gap:10px;background:linear-gradient(135deg,#fffbf0,#fff8e1);border:1px solid #f59e0b;border-radius:9px;padding:12px 16px;margin-bottom:18px}
+.cycle-explain .ce-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.cycle-explain .ce-body{flex:1}
+.cycle-explain .ce-title{font-size:13px;font-weight:700;color:#92400e;margin-bottom:6px}
+.cycle-explain .ce-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
+.cycle-explain .ce-item{background:white;border-radius:6px;padding:8px 11px;border:1px solid #fde68a;font-size:11.5px;color:#555}
+.cycle-explain .ce-item strong{color:#1a3a5c;display:block;font-size:12px;margin-bottom:2px}
+.rpt-section{margin-bottom:28px}
+.rpt-sec-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(90deg,#eef4ff,transparent 70%);border-left:4px solid #2d5a8e;border-radius:0 8px 8px 0;margin-bottom:15px}
+.rpt-sec-hdr .sec-icon{font-size:18px}.rpt-sec-hdr .sec-info{flex:1}
+.rpt-sec-hdr .sec-title{font-size:14px;font-weight:700;color:#1a3a5c}
+.rpt-sec-hdr .sec-desc{font-size:11px;color:#888;margin-top:1px}
+.sec-badge{font-size:11px;background:#2d5a8e;color:white;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:11px}
+.kpi-card{background:white;border-radius:9px;padding:13px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:3px solid;text-align:center}
+.kpi-val{font-size:22px;font-weight:800;color:#1a1a2e}
+.kpi-lbl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+.kpi-sub{font-size:11px;color:#888;margin-top:4px;font-weight:500}
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.cc{background:white;border-radius:9px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cc h3{font-size:12.5px;color:#555;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;font-weight:600}
+.cw{position:relative;height:210px}
+.cw.h220{height:230px}.cw.h250{height:260px}
+.cw.cw-auto{height:300px}
+/* ─── Day-wise ──────────────────────────────────────────── */
+.dw-view-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.dw-view-pill{padding:6px 16px;border:1px solid #dde6f0;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;background:white;color:#555;transition:all .2s;font-family:inherit}
+.dw-view-pill.active{background:#2d5a8e;color:white;border-color:#2d5a8e;box-shadow:0 2px 8px rgba(45,90,142,.3)}
+.dw-topn-wrap{display:flex;align-items:center;gap:6px;background:#f8faff;padding:5px 10px;border-radius:20px;border:1px solid #dde8f5}
+.dw-topn-wrap>span{font-size:11px;color:#888;font-weight:600}
+.dw-n-btn{padding:3px 10px;border:1px solid #dde6f0;border-radius:12px;cursor:pointer;font-size:11px;font-weight:700;background:white;color:#555;transition:all .2s;font-family:inherit}
+.dw-n-btn.active{background:#219a52;color:white;border-color:#219a52}
+.dw-view-hint{font-size:11px;color:#aaa;margin-left:auto;font-style:italic}
+.dw-tab-bar{display:flex;gap:5px;padding:10px 12px;background:#f7f9fb;border-radius:10px 10px 0 0;border:1px solid #e2eaf3;border-bottom:none;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+.dw-tab-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid #dde6f0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;background:white;color:#666;transition:all .2s;white-space:nowrap;font-family:inherit;flex-shrink:0}
+.dw-tab-btn.active{color:white;border-color:transparent;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.dw-tab-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dw-content-wrap{background:white;border:1px solid #e2eaf3;border-radius:0 0 10px 10px;padding:16px}
+.dw-pane{display:none}.dw-pane.active{display:block}
+.dw-mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.dw-mini{background:#f7f9fb;border-radius:7px;padding:8px 10px;text-align:center}
+.dw-mini-val{font-size:15px;font-weight:700;color:#1a3a5c}
+.dw-mini-lbl{font-size:9.5px;color:#999;text-transform:uppercase;margin-top:2px}
+/* ─── Weekly ─────────────────────────────────────────────── */
+.week-chart-wrap{background:white;border-radius:9px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px}
+.week-chart-wrap h3{font-size:12.5px;color:#555;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;font-weight:600}
+.day-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.day-card{background:white;border-radius:9px;padding:13px 10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #e5eef5;transition:transform .2s}
+.day-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.day-card.peak{border-color:#f59e0b;background:linear-gradient(135deg,#fffbf0,white)}
+.dc-day{font-size:12px;font-weight:800;color:#1a3a5c;text-transform:uppercase;letter-spacing:.3px}
+.dc-period{font-size:9.5px;color:#aaa;margin-bottom:7px;line-height:1.3}
+.dc-efforts{font-size:20px;font-weight:800;color:#1a3a5c;line-height:1.1}
+.dc-meta{font-size:11px;color:#666;margin-top:5px}
+.dc-bar-bg{height:4px;background:#eef2f7;border-radius:3px;margin:8px 0;overflow:hidden}
+.dc-bar-fill{height:100%;border-radius:3px}
+.dc-top{font-size:10.5px;color:#2d5a8e;font-weight:500;margin-top:3px}
+.peak-badge{font-size:9px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-weight:600;margin-left:4px}
+/* ─── Resource Cards ─────────────────────────────────────── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px}
+.res-card{background:white;border-radius:9px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.res-card-head{color:white;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.res-avatar{width:36px;height:36px;background:rgba(255,255,255,.22);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.res-name{font-size:13.5px;font-weight:600}.res-sub{font-size:10.5px;opacity:.8;margin-top:2px}
+.res-card-body{padding:12px 13px}
+.res-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px}
+.res-stat{text-align:center;background:#f7faff;padding:7px 4px;border-radius:6px}
+.res-stat-val{font-size:16px;font-weight:700}.res-stat-lbl{font-size:9.5px;color:#888;margin-top:2px;text-transform:uppercase}
+.mini-lbl{font-size:10px;color:#999;text-transform:uppercase;font-weight:600;margin:7px 0 5px;letter-spacing:.4px}
+.stage-tags{display:flex;flex-wrap:wrap;gap:4px}
+.s-tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.plat-tags{display:flex;gap:5px;flex-wrap:wrap}
+.plat-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+.tt-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:11.5px;color:#555}
+.tt-row strong{color:#333}
+/* ─── Cycle table ────────────────────────────────────────── */
+.cycle-table{width:100%;border-collapse:collapse;font-size:12px}
+.cycle-table th{background:#f0f4fa;padding:7px 10px;text-align:left;font-size:10.5px;color:#666;font-weight:600;text-transform:uppercase;border-bottom:2px solid #dde5f0}
+.cycle-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.cycle-table tr:hover td{background:#f8fbff}
+.cycle-table .current-cycle td{background:#f0fff5!important}
+.eff-bar-wrap{background:#eef2f7;border-radius:4px;height:6px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-left:5px}
+.eff-bar{height:100%;border-radius:4px}
+.cycle-res-row{display:flex;flex-wrap:wrap;gap:4px}
+.cycle-res-pill{font-size:10px;padding:2px 6px;border-radius:10px;background:#eef2f7;color:#2d5a8e;font-weight:500}
+/* ─── Awards ─────────────────────────────────────────────── */
+.awards-wrap{background:linear-gradient(135deg,#0d1a2e 0%,#1a3a5c 50%,#0a1628 100%);border-radius:12px;padding:24px;color:white}
+.awards-hero-hdr{text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.awards-hero-hdr .trophy-row{font-size:28px;letter-spacing:6px;margin-bottom:8px}
+.awards-hero-hdr h2{font-size:20px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.awards-hero-hdr p{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px}
+.mvp-spotlight{background:linear-gradient(135deg,#b8860b,#ffd700,#daa520);border-radius:12px;padding:20px;text-align:center;margin-bottom:18px;color:#1a1a1a;box-shadow:0 8px 30px rgba(255,215,0,.3)}
+.mvp-crown{font-size:36px;margin-bottom:6px}
+.mvp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#7d5a00;margin-bottom:4px}
+.mvp-name{font-size:20px;font-weight:900;color:#3d2900;word-break:break-word}
+.mvp-stats{display:flex;justify-content:center;gap:20px;margin-top:10px}
+.mvp-stat{text-align:center}
+.mvp-stat-val{font-size:18px;font-weight:800;color:#3d2900}
+.mvp-stat-lbl{font-size:9.5px;color:#7d5a00;text-transform:uppercase}
+.awards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.award-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;cursor:default}
+.award-card:hover{transform:translateY(-3px);background:rgba(255,255,255,.13)}
+.award-emoji{font-size:26px;margin-bottom:7px}
+.award-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.6);margin-bottom:4px}
+.award-winner{font-size:12.5px;font-weight:700;color:#fbbf24;word-break:break-word;line-height:1.3}
+.award-value{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:3px}
+.res-count-note{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#7d5a00;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:7px 12px;margin-bottom:12px}
+.no-data{text-align:center;padding:60px 20px;color:#bbb}
+.no-data .ico{font-size:42px;margin-bottom:10px}
+.no-data p{font-size:13px}
+</style>
+</head>
+<body>
+<div class="app-header">
+  <div class="app-header-left"><span class="logo">📊</span><h1>Resource Efforts Insights Tool</h1></div>
+  <div class="cycle-badge"><div class="cycle-dot"></div><span id="active-cycle-hdr">Active Cycle: —</span></div>
+</div>
+<div class="tab-bar">
+  <button class="tab-btn active" id="btn-tab-data">📋 Data Sheet</button>
+  <button class="tab-btn" id="btn-tab-report">📈 Report</button>
+</div>
+
+<div id="sheet-data" class="sheet active">
+  <div class="toolbar">
+    <button class="btn btn-import" id="btn-upload-trigger">📂 Import Excel</button>
+    <div class="toolbar-sep"></div>
+    <button class="btn btn-primary" id="btn-add">+ Add Row</button>
+    <button class="btn btn-danger" id="btn-clear">🗑 Clear All</button>
+    <div class="toolbar-sep"></div>
+    <button class="btn btn-success" id="btn-gen">📈 Generate Report →</button>
+    <span class="row-count" id="row-count-lbl">0 rows</span>
+  </div>
+  <div id="drop-zone-area" class="drop-zone-wrap">
+    <div class="drop-zone" id="drop-zone">
+      <div class="dz-icon">📂</div>
+      <h3>Upload your Excel file</h3>
+      <p>Drag &amp; drop your .xlsx file · Columns A–C hidden auto-detected</p>
+      <label class="btn-upload">📂 Browse File<input type="file" id="file-input-dz" accept=".xlsx,.xls" style="display:none"></label>
+      <div class="headers-preview">
+        <span class="hdr-pill">🎯 Current Stage</span><span class="hdr-pill">⏱ Efforts</span>
+        <span class="hdr-pill">🗂 Task Type</span><span class="hdr-pill new">🖥️ Platform</span>
+        <span class="hdr-pill">👤 Created By</span><span class="hdr-pill">📅 Created On</span>
+      </div>
+    </div>
+  </div>
+  <div class="table-container" id="table-wrap" style="display:none">
+    <table>
+      <thead><tr>
+        <th style="width:28px">#</th><th style="width:135px">Current Stage</th>
+        <th style="width:100px">Efforts (min)</th><th style="width:150px">Task Type</th>
+        <th style="width:100px">Platform</th><th style="width:140px">Created By</th>
+        <th style="width:165px">Created On</th>
+        <th style="width:155px">Day Cycle 🔄</th>
+        <th style="width:48px">Src</th><th style="width:35px"></th>
+      </tr></thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="sheet-report" class="sheet">
+  <div class="report-wrap">
+    <div id="report-root"><div class="no-data"><div class="ico">📊</div><p>Import or add data, then click "Generate Report".</p></div></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span>📂</span><h3>Import Excel File</h3><button class="modal-close" id="modal-close-btn">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="modal-cancel-btn">Cancel</button>
+      <button class="btn btn-success" id="modal-confirm-btn">✅ Import</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="file-input-btn" accept=".xlsx,.xls" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>
+// ── ✅ CYCLE CONSTANTS — Cycle STARTS at 6:31 AM ──────────────────────────────
+const CYCLE_HOUR=6, CYCLE_MIN=31; // 6:31 AM = start of new cycle
+// Rule: entry time < 6:31 AM → belongs to PREVIOUS day's cycle
+// Rule: entry time >= 6:31 AM → belongs to CURRENT day's cycle
+// e.g. Monday cycle = Mon 6:31 AM → Tue 6:30 AM
+
+const STAGES=['Build','Peer Review','Publish','New','In Progress','On Hold','Completed','Cancelled'];
+const PLATFORMS=['Marketo','AEM'];
+const STAGE_COLORS={'Build':'#3b82f6','Peer Review':'#f59e0b','Publish':'#10b981','New':'#60a5fa','In Progress':'#a78bfa','On Hold':'#94a3b8','Completed':'#34d399','Cancelled':'#f87171'};
+const PLAT_COLORS={'Marketo':'#ff6b35','AEM':'#1473e6'};
+const RES_COLORS=['#2d5a8e','#219a52','#e67e22','#7d3c98','#c0392b','#16a085','#d35400','#1a5276','#6c3483','#117a65','#1a6bc0','#8e5ea2','#c17f24','#2c9f4b','#d4535c','#27749c','#a04b4b','#4b7a2e','#6c5282','#0e6655','#6b3e26','#1a5574','#7d6608','#117864','#784212'];
+const FIELD_DEFS=[
+  {key:'stage',    label:'Current Stage',    required:true, icon:'🎯', match:h=>/current\s*stage|^stage$/i.test(String(h).trim())},
+  {key:'efforts',  label:'Efforts (minutes)',required:true, icon:'⏱', match:h=>/efforts/i.test(String(h).trim())},
+  {key:'taskType', label:'Service Task Type',required:false,icon:'🗂', match:h=>/service\s+task\s+type|task\s+type/i.test(String(h).trim())},
+  {key:'platform', label:'Platform',         required:false,icon:'🖥️',match:h=>/^platform/i.test(String(h).trim())},
+  {key:'createdBy',label:'Created By',       required:true, icon:'👤', match:h=>/created\s*by/i.test(String(h).trim())},
+  {key:'createdOn',label:'Created On',       required:true, icon:'📅', match:h=>/created\s*on/i.test(String(h).trim())}
+];
+let charts={},pendingImport=null,dwChartBuilt={};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtEff(min){if(!min||min<=0)return'—';if(min<60)return`${min}m`;const h=parseFloat((min/60).toFixed(1));return`${h} hr`;}
+function fmtEffShort(min){if(!min||min<=0)return'';if(min<60)return`${min}m`;const h=parseFloat((min/60).toFixed(1));return`${h}hr`;}
+function shortName(name){return(name.split('(')[0]).trim();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function getDayName(ds){return['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(ds+'T12:00:00').getDay()];}
+function colLetter(i){let r='',n=i+1;while(n>0){r=String.fromCharCode(64+(n-1)%26+1)+r;n=Math.floor((n-1)/26);}return r;}
+
+// ── ✅ FIXED CYCLE LOGIC ──────────────────────────────────────────────────────
+function getCycleDate(dtStr){
+  if(!dtStr)return null;
+  const dt=new Date(dtStr);if(isNaN(dt))return null;
+  const cs=new Date(dt);
+  cs.setHours(CYCLE_HOUR,CYCLE_MIN,0,0); // cs = 6:31 AM on same calendar day
+  // If entry is BEFORE 6:31 AM → belongs to PREVIOUS day's cycle
+  if(dt<cs)cs.setDate(cs.getDate()-1);
+  return cs;
+}
+function getCycleDateKey(cd){
+  if(!cd)return'unknown';
+  const d=new Date(cd);
+  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getActiveCycle(){
+  const now=new Date(),c=new Date(now);
+  c.setHours(CYCLE_HOUR,CYCLE_MIN,0,0); // 6:31 AM cutoff
+  // At 6:31 AM or later → current day's cycle active
+  // Before 6:31 AM → previous day's cycle still active
+  if(now>=c)return now;
+  const y=new Date(now);y.setDate(y.getDate()-1);return y;
+}
+// ✅ Clearer label: "Mon, May 18" — cycle named after start day
+function formatCycleLabel(cd){
+  if(!cd)return'—';
+  return new Date(cd).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+// ✅ Full period: "Mon, May 18 · 6:31 AM → Tue, May 19 · 6:30 AM"
+function formatCyclePeriod(dateKey){
+  if(!dateKey)return'';
+  const s=new Date(dateKey+'T12:00:00');
+  const e=new Date(dateKey+'T12:00:00');e.setDate(e.getDate()+1);
+  const sd=s.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const ed=e.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  return`${sd} 6:31 AM → ${ed} 6:30 AM`;
+}
+
+function dateToDatetimeLocal(d){if(!d)return'';const dt=d instanceof Date?d:new Date(d);if(isNaN(dt))return'';const p=n=>String(n).padStart(2,'0');return`${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;}
+function parseExcelDate(val){if(!val)return'';if(val instanceof Date)return dateToDatetimeLocal(val);if(typeof val==='number'&&val>40000){const d=new Date(Math.round((val-25569)*86400*1000));const p=n=>String(n).padStart(2,'0');return`${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;}if(typeof val==='string'){const d=new Date(val);if(!isNaN(d))return dateToDatetimeLocal(d);}return'';}
+
+// ── Row Management ────────────────────────────────────────────────────────────
+function addRow(data={},source='manual'){
+  const tbody=document.getElementById('tbl-body');const tr=document.createElement('tr');
+  if(source==='excel')tr.classList.add('imported-row');
+  const sv=String(data.stage||'').trim(),effSt=sv&&!STAGES.includes(sv)?[sv,...STAGES]:STAGES;
+  const stageOpts=effSt.map(s=>`<option value="${esc(s)}"${sv===s?' selected':''}>${esc(s)}</option>`).join('');
+  const pv=String(data.platform||'').trim(),effPl=pv&&!PLATFORMS.includes(pv)?[pv,...PLATFORMS]:PLATFORMS;
+  const platOpts=effPl.map(p=>`<option value="${esc(p)}"${pv===p?' selected':''}>${esc(p)}</option>`).join('');
+  const srcBadge=source==='excel'?'<span class="src-badge src-excel">xlsx</span>':source==='api'?'<span class="src-badge src-api">live</span>':'<span class="src-badge src-manual">manual</span>';
+  tr.innerHTML=`<td class="row-num">${tbody.children.length+1}</td><td><select><option value="">—</option>${stageOpts}</select></td><td><input type="number" placeholder="90" min="0" value="${parseFloat(data.efforts)||''}"></td><td><input type="text" placeholder="Email Deployment" value="${esc(data.taskType)}"></td><td><select><option value="">—</option>${platOpts}</select></td><td><input type="text" placeholder="John Doe" value="${esc(data.createdBy)}"></td><td><input type="datetime-local" class="dt-input" value="${data.createdOn||''}"></td><td class="cycle-cell"><span style="color:#bbb;font-size:11px">—</span></td><td>${srcBadge}</td><td><button class="del-btn">✕</button></td>`;
+  tbody.appendChild(tr);
+  if(data.createdOn)updateCycleChip(tr);
+  tr.querySelector('.dt-input').addEventListener('change',()=>updateCycleChip(tr));
+  tr.querySelector('.del-btn').addEventListener('click',()=>{tr.remove();renum();updateCount();checkEmpty();});
+  updateCount();checkEmpty();
+}
+function renum(){document.querySelectorAll('#tbl-body tr').forEach((r,i)=>r.querySelector('.row-num').textContent=i+1);}
+function updateCount(){const n=document.querySelectorAll('#tbl-body tr').length;document.getElementById('row-count-lbl').textContent=n+(n===1?' row':' rows');}
+
+// ✅ Updated cycle chip — shows cycle day name + period tooltip
+function updateCycleChip(row){
+  const val=row.querySelector('.dt-input').value,chip=row.querySelector('.cycle-cell');
+  if(!val){chip.innerHTML='<span style="color:#bbb;font-size:11px">—</span>';return;}
+  const cd=getCycleDate(val);if(!cd){chip.innerHTML='<span style="color:#bbb;font-size:11px">—</span>';return;}
+  const cycleKey=getCycleDateKey(cd);
+  const isAct=cycleKey===getCycleDateKey(getActiveCycle());
+  const col=isAct?'#219a52':'#2d5a8e',bg=isAct?'#e8f8f0':'#eef2f7';
+  const label=formatCycleLabel(cd);
+  const period=formatCyclePeriod(cycleKey);
+  chip.innerHTML=`<span class="cycle-chip" style="background:${bg};color:${col}" title="${period}">${isAct?'🟢 ':'📅 '}${label}</span>`;
+}
+function checkEmpty(){const n=document.querySelectorAll('#tbl-body tr').length;document.getElementById('drop-zone-area').style.display=n===0?'block':'none';document.getElementById('table-wrap').style.display=n>0?'block':'none';}
+function getData(){return Array.from(document.querySelectorAll('#tbl-body tr')).map(r=>{const c=r.querySelectorAll('td'),dtVal=c[6].querySelector('input').value,cd=getCycleDate(dtVal);return{stage:c[1].querySelector('select').value,efforts:parseFloat(c[2].querySelector('input').value)||0,taskType:c[3].querySelector('input').value.trim(),platform:c[4].querySelector('select').value,createdBy:c[5].querySelector('input').value.trim(),createdOn:dtVal,cycleDate:cd,cycleKey:getCycleDateKey(cd),cycleLabel:formatCycleLabel(cd)};}).filter(d=>d.createdBy||d.stage||d.taskType);}
+
+// ── Import ────────────────────────────────────────────────────────────────────
+function processFile(file){if(!file)return;if(!file.name.match(/\.(xlsx|xls)$/i)){showToast('Please upload an .xlsx or .xls file','error');return;}const reader=new FileReader();reader.onload=function(e){try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellStyles:true});const shName=wb.SheetNames.find(n=>!/hidden/i.test(n))||wb.SheetNames[0];const ws=wb.Sheets[shName];const colsInfo=ws['!cols']||[];const wsRange=XLSX.utils.decode_range(ws['!ref']||'A1:A1');const orderedHdrs=[];for(let c=wsRange.s.c;c<=wsRange.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r:wsRange.s.r,c})];const name=cell?String(cell.v||'').trim():'';const isHidden=!!(colsInfo[c]&&colsInfo[c].hidden);if(name)orderedHdrs.push({name,col:c,isHidden});}const visibleHdrs=orderedHdrs.filter(h=>!h.isHidden),allHdrNames=orderedHdrs.map(h=>h.name);const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});if(!rows.length){showToast('No data rows found','error');return;}const mapping={};FIELD_DEFS.forEach(def=>{const found=allHdrNames.find(h=>def.match(h));if(found)mapping[def.key]=found;});if(!mapping.stage&&visibleHdrs[0])mapping.stage=visibleHdrs[0].name;if(!mapping.efforts&&visibleHdrs[1])mapping.efforts=visibleHdrs[1].name;if(visibleHdrs.length>=3){const v2=visibleHdrs[2].name,v2isTask=FIELD_DEFS.find(d=>d.key==='taskType').match(v2);if(v2isTask){if(!mapping.taskType)mapping.taskType=v2;if(visibleHdrs[3]){const v3=visibleHdrs[3].name,v3isPlat=FIELD_DEFS.find(d=>d.key==='platform').match(v3);if(v3isPlat){if(!mapping.platform)mapping.platform=v3;if(!mapping.createdBy&&visibleHdrs[4])mapping.createdBy=visibleHdrs[4].name;if(!mapping.createdOn&&visibleHdrs[5])mapping.createdOn=visibleHdrs[5].name;}else{if(!mapping.createdBy)mapping.createdBy=v3;if(!mapping.createdOn&&visibleHdrs[4])mapping.createdOn=visibleHdrs[4].name;}}}else{if(!mapping.createdBy)mapping.createdBy=v2;if(!mapping.createdOn&&visibleHdrs[3])mapping.createdOn=visibleHdrs[3].name;}}const mapDisplay=FIELD_DEFS.map(def=>({...def,foundAs:mapping[def.key]||null}));let valid=0,skip=0;rows.forEach(r=>{const cb=mapping.createdBy?String(r[mapping.createdBy]||'').trim():'';if(cb)valid++;else skip++;});pendingImport={rows,mapping,mapDisplay,fileName:file.name,sheetName:shName,totalRows:rows.length,validRows:valid,skippedRows:skip};showImportModal();}catch(err){showToast('Error: '+err.message,'error');}};reader.readAsArrayBuffer(file);}
+function showImportModal(){const{mapDisplay,fileName,sheetName,totalRows,validRows,skippedRows}=pendingImport;const missing=mapDisplay.filter(d=>d.required&&!d.foundAs);const warnHtml=missing.length?`<div class="warn-banner">⚠️ <div>Missing required: <strong>${missing.map(d=>d.label).join(', ')}</strong></div></div>`:'';const mapRows=mapDisplay.map(d=>{const stCls=d.foundAs?'map-ok':d.required?'map-err':'map-warn';return`<tr><td>${d.icon} <strong>${d.label}</strong>${!d.required?' <small style="color:#aaa">(opt)</small>':''}</td><td>${d.foundAs?`<span class="found-as">${esc(d.foundAs)}</span>`:'<span style="color:#bbb;font-size:11px">—</span>'}</td><td><span class="map-status ${stCls}">${d.foundAs?'✅':d.required?'❌':'⚪'}</span></td></tr>`;}).join('');document.getElementById('modal-body').innerHTML=`<div class="file-info"><div class="file-icon">📊</div><div class="file-details"><h4>${esc(fileName)}</h4><p>Sheet: <strong>${esc(sheetName)}</strong> &nbsp;|&nbsp; ${totalRows} rows</p></div></div>${warnHtml}<div class="section-lbl">Column Mapping</div><table class="mapping-table"><thead><tr><th>Field</th><th>Mapped To</th><th></th></tr></thead><tbody>${mapRows}</tbody></table><div class="row-summary"><div class="rsumm-card"><div class="rsumm-val">${totalRows}</div><div class="rsumm-lbl">Total</div></div><div class="rsumm-card"><div class="rsumm-val" style="color:#219a52">${validRows}</div><div class="rsumm-lbl">Import</div></div><div class="rsumm-card"><div class="rsumm-val" style="color:#e67e22">${skippedRows}</div><div class="rsumm-lbl">Skip</div></div></div><div class="section-lbl">Import Mode</div><div class="import-mode"><label class="radio-opt"><input type="radio" name="im-mode" value="replace" checked><span><strong>Replace</strong></span></label><label class="radio-opt"><input type="radio" name="im-mode" value="append"><span><strong>Append</strong></span></label></div>`;document.getElementById('modal-confirm-btn').textContent=`✅ Import ${validRows} Rows`;document.getElementById('modal-overlay').classList.remove('hidden');}
+function confirmImport(){if(!pendingImport)return;const{rows,mapping}=pendingImport;const mode=document.querySelector('input[name="im-mode"]:checked').value;if(mode==='replace')document.getElementById('tbl-body').innerHTML='';let imported=0;rows.forEach(r=>{const cb=mapping.createdBy?String(r[mapping.createdBy]||'').trim():'';if(!cb)return;addRow({stage:mapping.stage?String(r[mapping.stage]||'').trim():'',efforts:mapping.efforts?parseFloat(r[mapping.efforts])||'':'',taskType:mapping.taskType?String(r[mapping.taskType]||'').trim():'',platform:mapping.platform?String(r[mapping.platform]||'').trim():'',createdBy:cb,createdOn:mapping.createdOn?parseExcelDate(r[mapping.createdOn]):''},'excel');imported++;});renum();checkEmpty();closeModal();showToast(`✅ ${imported} rows imported!`,'success');pendingImport=null;}
+function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');document.getElementById('modal-body').innerHTML='';}
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),3500);}
+function killCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};dwChartBuilt={};}
+
+// ── REPORT ────────────────────────────────────────────────────────────────────
+function buildReport(){
+  const data=getData(),root=document.getElementById('report-root');killCharts();
+  if(!data.length){root.innerHTML=`<div class="no-data"><div class="ico">📭</div><p>No data. Import or add data first.</p></div>`;return;}
+  const totalEfforts=data.reduce((s,d)=>s+d.efforts,0);
+  const resources={},stageCnt={},ttCnt={},cycleCnt={},platCnt={};
+  const activeCycleKey=getCycleDateKey(getActiveCycle());
+
+  data.forEach(d=>{
+    const k=d.createdBy||'Unknown';
+    if(!resources[k])resources[k]={name:k,efforts:0,tasks:0,stages:{},taskTypes:{},cycles:{},platforms:{},dailyEfforts:{}};
+    resources[k].efforts+=d.efforts;resources[k].tasks++;
+    if(d.stage){resources[k].stages[d.stage]=(resources[k].stages[d.stage]||0)+1;stageCnt[d.stage]=(stageCnt[d.stage]||0)+1;}
+    if(d.taskType){resources[k].taskTypes[d.taskType]=(resources[k].taskTypes[d.taskType]||0)+1;ttCnt[d.taskType]=(ttCnt[d.taskType]||0)+1;}
+    if(d.platform){resources[k].platforms[d.platform]=(resources[k].platforms[d.platform]||0)+1;platCnt[d.platform]=(platCnt[d.platform]||0)+1;}
+    if(d.cycleKey&&d.cycleKey!=='unknown'){
+      if(!cycleCnt[d.cycleKey])cycleCnt[d.cycleKey]={label:formatCycleLabel(d.cycleDate),period:formatCyclePeriod(d.cycleKey),efforts:0,tasks:0,resources:{}};
+      cycleCnt[d.cycleKey].efforts+=d.efforts;cycleCnt[d.cycleKey].tasks++;
+      cycleCnt[d.cycleKey].resources[k]=(cycleCnt[d.cycleKey].resources[k]||0)+d.efforts;
+      if(!resources[k].cycles[d.cycleKey])resources[k].cycles[d.cycleKey]={label:formatCycleLabel(d.cycleDate),period:formatCyclePeriod(d.cycleKey),efforts:0,tasks:0};
+      resources[k].cycles[d.cycleKey].efforts+=d.efforts;resources[k].cycles[d.cycleKey].tasks++;
+    }
+    // ✅ FIX: Group by CYCLE KEY, not calendar date
+    const dk=d.cycleKey!=='unknown'?d.cycleKey:'';
+    if(dk)resources[k].dailyEfforts[dk]=(resources[k].dailyEfforts[dk]||0)+d.efforts;
+  });
+
+  const resList=Object.values(resources);
+  // ✅ FIX: allDates = unique CYCLE KEYS (not calendar dates)
+  const allDates=[...new Set(data.map(d=>d.cycleKey!=='unknown'?d.cycleKey:null).filter(Boolean))].sort();
+  const cycleEntries=Object.entries(cycleCnt).sort((a,b)=>a[0].localeCompare(b[0]));
+
+  // ✅ FIX: dailyTotal grouped by CYCLE KEY
+  const dailyTotal={};
+  allDates.forEach(dt=>{
+    const rows=data.filter(d=>d.cycleKey===dt);
+    dailyTotal[dt]={efforts:rows.reduce((s,r)=>s+r.efforts,0),tasks:rows.length,resourceSet:new Set(rows.map(r=>r.createdBy||'Unknown'))};
+  });
+
+  const totalRes=resList.length,avgEff=totalRes>0?Math.round(totalEfforts/totalRes):0;
+  const totalPlat=Object.values(platCnt).reduce((s,v)=>s+v,0);
+  const now=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const peakDayEntry=Object.entries(dailyTotal).sort((a,b)=>b[1].efforts-a[1].efforts)[0];
+  const peakDay=peakDayEntry?peakDayEntry[0]:null;
+
+  // Awards
+  const getWinner=fn=>{if(!resList.length)return null;const sc=resList.map(r=>({name:r.name,score:fn(r)})).sort((a,b)=>b.score-a.score);return sc[0].score>0?sc[0]:null;};
+  const mvpW=getWinner(r=>r.efforts),taskW=getWinner(r=>r.tasks),buildW=getWinner(r=>r.stages['Build']||0),reviewW=getWinner(r=>r.stages['Peer Review']||0),pubW=getWinner(r=>r.stages['Publish']||0),markeW=getWinner(r=>r.platforms['Marketo']||0),aemW=getWinner(r=>r.platforms['AEM']||0),streakW=getWinner(r=>Object.values(r.dailyEfforts).filter(e=>e>0).length);
+  let dayHeroW=null,dayHeroBest=0;resList.forEach(r=>Object.entries(r.dailyEfforts).forEach(([,e])=>{if(e>dayHeroBest){dayHeroBest=e;dayHeroW={name:r.name,score:e};}}));
+  const otherAwards=[{emoji:'⚡',title:'Task Titan',desc:'Most Tasks Logged',w:taskW,val:taskW?`${taskW.score} tasks`:null},{emoji:'🔨',title:'Build Boss',desc:'Most Build Tasks',w:buildW,val:buildW?`${buildW.score} builds`:null},{emoji:'🔍',title:'Quality Hawk',desc:'Most Peer Reviews',w:reviewW,val:reviewW?`${reviewW.score} reviews`:null},{emoji:'🚀',title:'Ship It!',desc:'Most Deliveries',w:pubW,val:pubW?`${pubW.score} published`:null},{emoji:'📧',title:'Marketo Maven',desc:'Marketo Specialist',w:markeW,val:markeW?`${markeW.score} tasks`:null},{emoji:'🎨',title:'AEM Ace',desc:'AEM Champion',w:aemW,val:aemW?`${aemW.score} tasks`:null},{emoji:'🔥',title:'Iron Streak',desc:'Most Active Cycles',w:streakW,val:streakW?`${streakW.score} cycles`:null},{emoji:'⭐',title:'Day Hero',desc:'Peak Single Cycle',w:dayHeroW,val:dayHeroW?fmtEff(dayHeroW.score):null}].filter(a=>a.w&&a.val);
+
+  const resH=Math.max(320,Math.min(700,resList.length*28+60));
+  const resNote=resList.length>12?`<div class="res-count-note">⚠️ <strong>${resList.length} resources detected.</strong> Horizontal bars auto-scale to fit all names.</div>`:'';
+  const defaultTopN=resList.length<=10?'All':10;
+  const activePeriod=formatCyclePeriod(getCycleDateKey(getActiveCycle()));
+
+  root.innerHTML=`
+    <div class="rpt-header">
+      <div><h2>📈 Resource Efforts Dashboard</h2><p>${now}</p></div>
+      <div class="rpt-header-right">
+        <div class="cycle-info-badge">🟢 <strong>Active Cycle: ${formatCycleLabel(getActiveCycle())}</strong><br><span style="font-size:10px;opacity:.8">${activePeriod}</span></div>
+        <button class="refresh-btn" id="btn-refresh">🔄 Refresh</button>
+      </div>
+    </div>
+    <!-- ✅ Cycle Explanation Banner -->
+    <div class="cycle-explain">
+      <div class="ce-icon">🔄</div>
+      <div class="ce-body">
+        <div class="ce-title">Day Cycle Definition — How shifts are counted</div>
+        <div class="ce-grid">
+          <div class="ce-item"><strong>⏰ Cycle Start</strong>Every day at <strong>6:31 AM</strong> — begins a new named cycle</div>
+          <div class="ce-item"><strong>🔚 Cycle Close</strong>Next day at <strong>6:30 AM</strong> — entries up to 6:30 AM belong to previous cycle</div>
+          <div class="ce-item"><strong>📅 Example — Monday Cycle</strong>Mon 6:31 AM → Tue 6:30 AM &nbsp;|&nbsp; Entries at 3:00 AM Tue = Monday</div>
+          <div class="ce-item"><strong>📅 Example — Friday Cycle</strong>Fri 6:31 AM → Sat 6:30 AM &nbsp;|&nbsp; Friday is last working cycle</div>
+        </div>
+      </div>
+    </div>
+    <!-- S1: KPIs -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">📊</span><div class="sec-info"><div class="sec-title">Overview</div></div><span class="sec-badge">${data.length} entries · ${allDates.length} cycles</span></div>
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-top-color:#2d5a8e"><div class="kpi-val">${totalRes}</div><div class="kpi-lbl">Resources</div></div>
+        <div class="kpi-card" style="border-top-color:#219a52"><div class="kpi-val">${data.length}</div><div class="kpi-lbl">Total Tasks</div></div>
+        <div class="kpi-card" style="border-top-color:#e67e22"><div class="kpi-val">${fmtEff(totalEfforts)}</div><div class="kpi-lbl">Total Effort</div><div class="kpi-sub">${totalEfforts.toLocaleString()} min</div></div>
+        <div class="kpi-card" style="border-top-color:#7d3c98"><div class="kpi-val">${fmtEff(avgEff)}</div><div class="kpi-lbl">Avg / Resource</div></div>
+        <div class="kpi-card" style="border-top-color:#148f77"><div class="kpi-val">${allDates.length}</div><div class="kpi-lbl">Active Cycles</div><div class="kpi-sub">6:31→6:30 AM</div></div>
+        <div class="kpi-card" style="border-top-color:#c0392b"><div class="kpi-val">${cycleEntries.length}</div><div class="kpi-lbl">Named Cycles</div></div>
+      </div>
+    </div>
+    <!-- S2: Team Performance -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">🏆</span><div class="sec-info"><div class="sec-title">Team Performance</div><div class="sec-desc">Horizontal bars — all ${totalRes} resources, no clutter</div></div><span class="sec-badge">${totalRes} resources</span></div>
+      ${resNote}
+      <div class="chart-grid-2">
+        <div class="cc"><h3>⏱ Total Efforts by Resource</h3><div class="cw cw-auto" id="eff-wrap"><canvas id="c-eff"></canvas></div></div>
+        <div class="cc"><h3>📊 Stage Breakdown by Resource</h3><div class="cw cw-auto" id="stk-wrap"><canvas id="c-stk"></canvas></div></div>
+      </div>
+    </div>
+    <!-- S3: Day-wise (cycle-based) -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">📅</span><div class="sec-info"><div class="sec-title">Cycle-wise Efforts</div><div class="sec-desc">Each x-axis label = one named cycle (6:31 AM → next day 6:30 AM)</div></div><span class="sec-badge">${allDates.length} cycles</span></div>
+      <div class="dw-view-bar">
+        <button class="dw-view-pill active" id="dw-pill-totals">📊 Cycle Totals</button>
+        <button class="dw-view-pill" id="dw-pill-stacked">👥 By Resource</button>
+        <div class="dw-topn-wrap" id="dw-topn-wrap" style="display:none"><span>Show top:</span>${[5,8,10,15,'All'].map(n=>`<button class="dw-n-btn${n===(defaultTopN==='All'?'All':defaultTopN)?' active':''}" data-n="${n}">${n}</button>`).join('')}</div>
+        <span class="dw-view-hint" id="dw-view-hint">Totals per named cycle — Mon cycle = Mon 6:31 AM → Tue 6:30 AM</span>
+      </div>
+      <div class="dw-tab-bar" id="dw-tabs"></div>
+      <div class="dw-content-wrap">
+        <div class="dw-pane active" id="dw-pane-team"><div class="cw h250"><canvas id="c-dw-team"></canvas></div><div class="dw-mini-stats" id="dw-mini-team"></div></div>
+        ${resList.map((r,i)=>`<div class="dw-pane" id="dw-pane-${i}"><div class="cw h250"><canvas id="c-dw-${i}"></canvas></div><div class="dw-mini-stats" id="dw-mini-${i}"></div></div>`).join('')}
+      </div>
+    </div>
+    <!-- S4: Weekly Hub Performance -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">📈</span><div class="sec-info"><div class="sec-title">Cycle Performance Summary</div><div class="sec-desc">Each bar = one named work cycle</div></div>${peakDay?`<span class="sec-badge">🏅 Peak: ${formatCycleLabel(new Date(peakDay+'T12:00:00'))}</span>`:''}</div>
+      <div class="week-chart-wrap"><h3>📉 Daily Effort Trend by Cycle — hover for period details</h3><div class="cw h250"><canvas id="c-week"></canvas></div></div>
+      <div class="day-cards-grid" id="day-cards-grid"></div>
+    </div>
+    <!-- S5: Platform -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">🖥️</span><div class="sec-info"><div class="sec-title">Platform Analysis</div></div><span class="sec-badge">${totalPlat} tagged</span></div>
+      <div class="chart-grid-3">
+        <div class="cc"><h3>📧 Overall Split</h3><div class="cw h220"><canvas id="c-plat-pie"></canvas></div></div>
+        <div class="cc"><h3>👤 Per Resource</h3><div class="cw h220"><canvas id="c-plat-res"></canvas></div></div>
+        <div class="cc"><h3>🎯 Per Stage</h3><div class="cw h220"><canvas id="c-plat-stg"></canvas></div></div>
+      </div>
+    </div>
+    <!-- S6: Stage & Task Type -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">🎯</span><div class="sec-info"><div class="sec-title">Stage & Task Type</div></div></div>
+      <div class="chart-grid-2">
+        <div class="cc"><h3>🔄 Stage by Effort</h3><div class="cw"><canvas id="c-stgpie"></canvas></div></div>
+        <div class="cc"><h3>🗂 Task Type Count</h3><div class="cw"><canvas id="c-tt"></canvas></div></div>
+      </div>
+    </div>
+    <!-- S7: ✅ Cycle Analysis — with period column -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">🔄</span><div class="sec-info"><div class="sec-title">Named Cycle Analysis</div><div class="sec-desc">Each cycle runs 6:31 AM → 6:30 AM next day — hover cycle chip for exact period</div></div><span class="sec-badge">${cycleEntries.length} cycles</span></div>
+      <div class="cc" style="margin-bottom:14px"><h3>📊 Stacked Efforts per Cycle</h3><div class="cw h220"><canvas id="c-cyc"></canvas></div></div>
+      <div class="cc">
+        <h3>📋 Cycle Summary</h3>
+        <table class="cycle-table">
+          <thead><tr><th>Named Cycle</th><th>Period (6:31 AM → 6:30 AM)</th><th>Status</th><th>Efforts</th><th>Tasks</th><th>Resources</th></tr></thead>
+          <tbody id="cyc-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- S8: Individual -->
+    <div class="rpt-section">
+      <div class="rpt-sec-hdr"><span class="sec-icon">👤</span><div class="sec-info"><div class="sec-title">Individual Resource Insights</div></div><span class="sec-badge">${totalRes} resources</span></div>
+      <div class="res-grid" id="res-grid"></div>
+    </div>
+    <!-- S9: Awards -->
+    <div class="rpt-section">
+      <div class="awards-wrap">
+        <div class="awards-hero-hdr"><div class="trophy-row">🏆 🌟 🏅</div><h2>Employee of the Week</h2><p>Recognising outstanding contributions this period</p></div>
+        ${mvpW?`<div class="mvp-spotlight"><div class="mvp-crown">👑</div><div class="mvp-label">MVP of the Week</div><div class="mvp-name">${esc(shortName(mvpW.name))}</div><div class="mvp-stats"><div class="mvp-stat"><div class="mvp-stat-val">${fmtEff(mvpW.score)}</div><div class="mvp-stat-lbl">Total Effort</div></div><div class="mvp-stat"><div class="mvp-stat-val">${(resources[mvpW.name]||{}).tasks||0}</div><div class="mvp-stat-lbl">Tasks</div></div><div class="mvp-stat"><div class="mvp-stat-val">${Object.keys((resources[mvpW.name]||{}).dailyEfforts||{}).length}</div><div class="mvp-stat-lbl">Active Cycles</div></div></div></div>`:''}
+        <div class="awards-grid" id="awards-grid"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('btn-refresh').addEventListener('click',buildReport);
+  const rnames=resList.map(r=>shortName(r.name));
+  const rcolors=resList.map((_,i)=>RES_COLORS[i%RES_COLORS.length]);
+
+  // ── S2: Horizontal bars ──────────────────────────────────────────────────────
+  document.getElementById('eff-wrap').style.height=resH+'px';
+  document.getElementById('stk-wrap').style.height=resH+'px';
+
+  charts.eff=new Chart(document.getElementById('c-eff'),{plugins:[ChartDataLabels],type:'bar',data:{labels:rnames,datasets:[{data:resList.map(r=>r.efforts),backgroundColor:rcolors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:58}},plugins:{legend:{display:false},datalabels:{anchor:'end',align:'right',offset:5,font:{size:10,weight:'700'},color:(ctx)=>rcolors[ctx.dataIndex%rcolors.length],backgroundColor:'rgba(255,255,255,.9)',borderRadius:4,padding:{top:2,bottom:2,left:5,right:5},borderWidth:1,borderColor:'rgba(0,0,0,.08)',formatter:v=>v>0?fmtEffShort(v):null},tooltip:{callbacks:{label:c=>`${fmtEff(c.raw)}  (${c.raw} min)`}}},scales:{y:{ticks:{color:'#333',font:{size:11},autoSkip:false},grid:{display:false}},x:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{color:'#aaa',font:{size:10}}}}}});
+
+  const activeStages=Object.keys(STAGE_COLORS).filter(s=>stageCnt[s]);
+  charts.stk=new Chart(document.getElementById('c-stk'),{plugins:[ChartDataLabels],type:'bar',data:{labels:rnames,datasets:activeStages.map(s=>({label:s,data:resList.map(r=>r.stages[s]?data.filter(d=>d.createdBy===r.name&&d.stage===s).reduce((sum,d)=>sum+d.efforts,0):0),backgroundColor:STAGE_COLORS[s]+'cc',borderColor:STAGE_COLORS[s],borderWidth:1,borderRadius:2}))},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:8}},plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}},datalabels:{anchor:'center',align:'center',color:'rgba(255,255,255,.92)',font:{size:8,weight:'700'},textShadowColor:'rgba(0,0,0,.5)',textShadowBlur:3,display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=20,formatter:v=>v>0?fmtEffShort(v):null},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtEff(c.raw)}`}}},scales:{y:{stacked:true,ticks:{color:'#333',font:{size:11},autoSkip:false},grid:{display:false}},x:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}}}});
+
+  // ── S3: Cycle-wise tab chart ──────────────────────────────────────────────────
+  const teamAvg=allDates.length>0?Math.round(totalEfforts/allDates.length):0;
+  const teamPeakDay=allDates.length>0?allDates.reduce((b,d)=>(dailyTotal[d]?.efforts||0)>=(dailyTotal[b]?.efforts||0)?d:b,allDates[0]):null;
+  const dwState={mode:'totals',topN:defaultTopN};
+
+  // ✅ Chart axis labels now show cycle names (Mon, May 18) not calendar dates
+  const cycleDayLabels=allDates.map(d=>`${getDayName(d)} ${d.slice(5)}`);
+
+  function buildDwTeamChart(){
+    if(charts['dw-team']){charts['dw-team'].destroy();delete charts['dw-team'];}
+    const canvas=document.getElementById('c-dw-team');if(!canvas)return;
+    if(dwState.mode==='totals'){
+      const wc=allDates.map(d=>d===peakDay?'rgba(245,158,11,.85)':'rgba(45,90,142,.75)');
+      charts['dw-team']=new Chart(canvas,{plugins:[ChartDataLabels],data:{labels:cycleDayLabels,datasets:[
+        {type:'bar',label:'Total Efforts',data:allDates.map(d=>dailyTotal[d].efforts||0),backgroundColor:wc,borderRadius:8,order:2,datalabels:{anchor:'end',align:'end',offset:3,font:{size:10,weight:'700'},color:'#1a3a5c',backgroundColor:'rgba(255,255,255,.9)',borderRadius:5,padding:{top:2,bottom:2,left:5,right:5},borderWidth:1,borderColor:'rgba(0,0,0,.08)',formatter:v=>v>0?fmtEffShort(v):null}},
+        {type:'line',label:'Active Resources',data:allDates.map(d=>dailyTotal[d].resourceSet.size||0),borderColor:'#10b981',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#10b981',fill:false,yAxisID:'y1',order:1,tension:.35,datalabels:{display:false}}
+      ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}},tooltip:{callbacks:{title:i=>`Cycle: ${cycleDayLabels[i[0].dataIndex]} · ${formatCyclePeriod(allDates[i[0].dataIndex])}`,label:c=>c.dataset.label==='Total Efforts'?`Effort: ${fmtEff(c.raw)}`:`Active: ${c.raw} people`}}},scales:{y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{color:'#8b949e',font:{size:10}}},y1:{type:'linear',position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{color:'#10b981',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#444',font:{size:10}}}}}});
+    }else{
+      const N=dwState.topN==='All'?resList.length:parseInt(dwState.topN);
+      const filteredRes=[...resList].sort((a,b)=>b.efforts-a.efforts).slice(0,N);
+      charts['dw-team']=new Chart(canvas,{plugins:[ChartDataLabels],type:'bar',data:{labels:cycleDayLabels,datasets:filteredRes.map((res)=>({label:shortName(res.name).split(' ')[0],data:allDates.map(d=>res.dailyEfforts[d]||0),backgroundColor:RES_COLORS[resList.indexOf(res)%RES_COLORS.length],borderRadius:2,stack:'s'}))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index'},plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},datalabels:{anchor:'center',align:'center',color:'rgba(255,255,255,.9)',font:{size:8,weight:'700'},textShadowColor:'rgba(0,0,0,.4)',textShadowBlur:3,display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=15,formatter:v=>v>0?fmtEffShort(v):null},tooltip:{callbacks:{title:i=>`Cycle: ${cycleDayLabels[i[0].dataIndex]}`,label:c=>`${c.dataset.label}: ${fmtEff(c.raw)}`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}}}});
+    }
+  }
+  buildDwTeamChart();
+  document.getElementById('dw-mini-team').innerHTML=`<div class="dw-mini"><div class="dw-mini-val">${fmtEff(totalEfforts)}</div><div class="dw-mini-lbl">Total</div></div><div class="dw-mini"><div class="dw-mini-val">${fmtEff(teamAvg)}</div><div class="dw-mini-lbl">Avg/Cycle</div></div><div class="dw-mini"><div class="dw-mini-val">${teamPeakDay?formatCycleLabel(new Date(teamPeakDay+'T12:00:00')):'—'}</div><div class="dw-mini-lbl">Peak Cycle</div></div><div class="dw-mini"><div class="dw-mini-val">${allDates.length}</div><div class="dw-mini-lbl">Cycles</div></div>`;
+
+  document.getElementById('dw-pill-totals').addEventListener('click',function(){dwState.mode='totals';document.querySelectorAll('.dw-view-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('dw-topn-wrap').style.display='none';document.getElementById('dw-view-hint').textContent='Totals per named cycle — Mon = Mon 6:31 AM → Tue 6:30 AM';buildDwTeamChart();});
+  document.getElementById('dw-pill-stacked').addEventListener('click',function(){dwState.mode='stacked';document.querySelectorAll('.dw-view-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('dw-topn-wrap').style.display='flex';document.getElementById('dw-view-hint').textContent=`Top ${dwState.topN} resources shown per cycle`;buildDwTeamChart();});
+  document.querySelectorAll('.dw-n-btn').forEach(btn=>btn.addEventListener('click',function(){dwState.topN=this.dataset.n==='All'?'All':parseInt(this.dataset.n);document.querySelectorAll('.dw-n-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');if(dwState.mode==='stacked')buildDwTeamChart();}));
+
+  // Individual tabs
+  const dwTabBar=document.getElementById('dw-tabs');
+  const teamTab=document.createElement('button');teamTab.className='dw-tab-btn active';teamTab.innerHTML='🏢 Team';teamTab.style.cssText='background:#1a3a5c;border-color:#1a3a5c;color:white';
+  dwTabBar.appendChild(teamTab);
+  resList.forEach((res,i)=>{
+    const col=RES_COLORS[i%RES_COLORS.length];
+    const btn=document.createElement('button');btn.className='dw-tab-btn';btn.innerHTML=`<span class="dot" style="background:${col}"></span>${shortName(res.name).split(' ')[0]}`;btn.title=shortName(res.name);
+    btn.addEventListener('click',function(){document.querySelectorAll('.dw-tab-btn').forEach(b=>{b.classList.remove('active');b.style.background='white';b.style.borderColor='#dde6f0';b.style.color='#666';});this.classList.add('active');this.style.background=col;this.style.borderColor=col;this.style.color='white';document.querySelectorAll('.dw-pane').forEach(p=>p.classList.remove('active'));const pane=document.getElementById(`dw-pane-${i}`);if(pane)pane.classList.add('active');if(!dwChartBuilt[`p${i}`]){buildDwPersonChart(i,res,allDates,cycleDayLabels,col);dwChartBuilt[`p${i}`]=true;}document.getElementById('dw-view-bar').style.display='none';});
+    dwTabBar.appendChild(btn);
+  });
+  teamTab.addEventListener('click',function(){document.querySelectorAll('.dw-tab-btn').forEach(b=>{b.classList.remove('active');b.style.background='white';b.style.borderColor='#dde6f0';b.style.color='#666';});this.classList.add('active');this.style.background='#1a3a5c';this.style.borderColor='#1a3a5c';this.style.color='white';document.querySelectorAll('.dw-pane').forEach(p=>p.classList.remove('active'));document.getElementById('dw-pane-team').classList.add('active');document.getElementById('dw-view-bar').style.display='flex';});
+
+  // ── S4: Weekly performance using cycle dates ──────────────────────────────────
+  const weekColors=allDates.map(d=>d===peakDay?'rgba(245,158,11,.75)':'rgba(45,90,142,.65)');
+  charts.week=new Chart(document.getElementById('c-week'),{plugins:[ChartDataLabels],data:{labels:cycleDayLabels,datasets:[
+    {type:'bar',label:'Total Efforts',data:allDates.map(d=>dailyTotal[d].efforts||0),backgroundColor:weekColors,borderRadius:7,order:2,datalabels:{anchor:'end',align:'end',offset:3,font:{size:10,weight:'700'},color:'#1a3a5c',backgroundColor:'rgba(255,255,255,.88)',borderRadius:4,padding:{top:2,bottom:2,left:4,right:4},borderWidth:1,borderColor:'rgba(0,0,0,.08)',formatter:v=>v>0?fmtEffShort(v):null}},
+    {type:'line',label:'Active Resources',data:allDates.map(d=>dailyTotal[d].resourceSet.size||0),borderColor:'#10b981',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#10b981',fill:false,yAxisID:'y1',order:1,tension:.35,datalabels:{display:false}}
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}},tooltip:{callbacks:{title:i=>`Cycle: ${cycleDayLabels[i[0].dataIndex]}`,label:c=>c.dataset.label==='Total Efforts'?`${fmtEff(c.raw)}`:`Active: ${c.raw} people`}}},scales:{y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{color:'#8b949e',font:{size:10}}},y1:{type:'linear',position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{color:'#10b981',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#444',font:{size:10}}}}}});
+
+  // Day cards — now cycle-based
+  const dayCardsEl=document.getElementById('day-cards-grid');
+  const maxDayEff=Math.max(...Object.values(dailyTotal).map(d=>d.efforts),1);
+  allDates.forEach(dt=>{
+    const dData=dailyTotal[dt],isPeak=dt===peakDay,pct=Math.round((dData.efforts/maxDayEff)*100);
+    const topRes=resList.map(r=>({name:r.name,eff:r.dailyEfforts[dt]||0})).sort((a,b)=>b.eff-a.eff)[0];
+    const periodLines=formatCyclePeriod(dt).split('→');
+    const card=document.createElement('div');card.className=`day-card${isPeak?' peak':''}`;
+    card.innerHTML=`<div class="dc-day">${getDayName(dt)} ${dt.slice(5)}${isPeak?' <span class="peak-badge">🏅</span>':''}</div><div class="dc-period">${periodLines[0].trim()}<br>→${periodLines[1]?.trim()}</div><div class="dc-efforts">${fmtEff(dData.efforts)}</div><div class="dc-meta">${dData.tasks} tasks · ${dData.resourceSet.size} people</div><div class="dc-bar-bg"><div class="dc-bar-fill" style="width:${pct}%;background:${isPeak?'#f59e0b':'#2d5a8e'}"></div></div>${topRes&&topRes.eff>0?`<div class="dc-top">⭐ ${shortName(topRes.name).split(' ')[0]}: ${fmtEff(topRes.eff)}</div>`:''}`;
+    dayCardsEl.appendChild(card);
+  });
+
+  // ── S5: Platform ──────────────────────────────────────────────────────────────
+  const pL=Object.keys(platCnt),pD=Object.values(platCnt),pC=pL.map(p=>PLAT_COLORS[p]||'#95a5a6');
+  charts.platPie=new Chart(document.getElementById('c-plat-pie'),{type:'doughnut',data:{labels:pL.length?pL:['No Data'],datasets:[{data:pD.length?pD:[1],backgroundColor:pC,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},datalabels:{display:false}}}});
+  const platResDs=PLATFORMS.filter(p=>platCnt[p]).map(p=>({label:p,data:resList.map(r=>r.platforms[p]||0),backgroundColor:PLAT_COLORS[p]+'aa',borderColor:PLAT_COLORS[p],borderWidth:1,borderRadius:3}));
+  if(platResDs.length){charts.platRes=new Chart(document.getElementById('c-plat-res'),{plugins:[ChartDataLabels],type:'bar',data:{labels:rnames,datasets:platResDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}},datalabels:{anchor:'center',align:'center',color:'rgba(255,255,255,.9)',font:{size:9,weight:'700'},textShadowColor:'rgba(0,0,0,.4)',textShadowBlur:3,display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=1,formatter:v=>v>0?String(v):null}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}}}});}
+  const stPD=Object.keys(stageCnt).filter(s=>stageCnt[s]>0);
+  const platStgDs=PLATFORMS.filter(p=>platCnt[p]).map(p=>({label:p,data:stPD.map(s=>data.filter(d=>d.stage===s&&d.platform===p).length),backgroundColor:PLAT_COLORS[p]+'aa',borderColor:PLAT_COLORS[p],borderWidth:1,borderRadius:3}));
+  if(platStgDs.length){charts.platStg=new Chart(document.getElementById('c-plat-stg'),{plugins:[ChartDataLabels],type:'bar',data:{labels:stPD,datasets:platStgDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}},datalabels:{anchor:'center',align:'center',color:'rgba(255,255,255,.9)',font:{size:9,weight:'700'},textShadowColor:'rgba(0,0,0,.4)',textShadowBlur:3,display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=1,formatter:v=>v>0?String(v):null}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}}}});}
+
+  // ── S6 ────────────────────────────────────────────────────────────────────────
+  const sL=Object.keys(stageCnt),sD=sL.map(s=>data.filter(d=>d.stage===s).reduce((sum,d)=>sum+d.efforts,0));
+  charts.stgPie=new Chart(document.getElementById('c-stgpie'),{type:'doughnut',data:{labels:sL,datasets:[{data:sD,backgroundColor:sL.map(s=>STAGE_COLORS[s]||'#95a5a6'),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}},datalabels:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtEff(c.raw)}`}}}}});
+  const tL=Object.keys(ttCnt),tD=Object.values(ttCnt),maxTD=Math.max(...tD,1);
+  charts.tt=new Chart(document.getElementById('c-tt'),{plugins:[ChartDataLabels],type:'bar',data:{labels:tL.length?tL:['No data'],datasets:[{data:tD.length?tD:[0],backgroundColor:tL.map((_,i)=>['#3b82f6','#f59e0b','#10b981','#a78bfa','#f87171'][i%5]),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:40}},plugins:{legend:{display:false},datalabels:{anchor:'end',align:'right',offset:6,font:{size:11,weight:'700'},color:'#1a3a5c',backgroundColor:'rgba(255,255,255,.85)',borderRadius:4,padding:{top:2,bottom:2,left:5,right:5},formatter:v=>v>0?String(v):null}},scales:{x:{beginAtZero:true,max:maxTD*1.2,grid:{color:'#f0f0f0'},ticks:{color:'#8b949e',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#444',font:{size:11}}}}}});
+
+  // ── S7: ✅ Cycle table with period column ────────────────────────────────────
+  charts.cyc=new Chart(document.getElementById('c-cyc'),{plugins:[ChartDataLabels],type:'bar',data:{labels:cycleEntries.map(([,v])=>v.label),datasets:resList.map((res,i)=>({label:shortName(res.name).split(' ')[0],data:cycleEntries.map(([k])=>res.cycles[k]?res.cycles[k].efforts:0),backgroundColor:RES_COLORS[i%RES_COLORS.length],borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}},datalabels:{anchor:'center',align:'center',color:'rgba(255,255,255,.9)',font:{size:8,weight:'700'},textShadowColor:'rgba(0,0,0,.4)',textShadowBlur:3,display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=20,formatter:v=>v>0?fmtEffShort(v):null},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtEff(c.raw)}`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0f0'}}}}});
+  const ctbody=document.getElementById('cyc-tbody');
+  const maxCE=Math.max(...cycleEntries.map(([,v])=>v.efforts),1);
+  cycleEntries.forEach(([key,v])=>{
+    const isAct=key===activeCycleKey,pct=Math.round((v.efforts/maxCE)*100),bc=isAct?'#219a52':'#2d5a8e';
+    const pills=Object.entries(v.resources).map(([n,e])=>`<span class="cycle-res-pill">${shortName(n).split(' ')[0]}: ${fmtEff(e)}</span>`).join('');
+    const tr=document.createElement('tr');if(isAct)tr.classList.add('current-cycle');
+    tr.innerHTML=`<td style="font-weight:700;color:#1a3a5c;font-size:13px">${v.label}</td><td style="font-size:11px;color:#666">${v.period}</td><td>${isAct?'<span class="cycle-chip" style="background:#e8f8f0;color:#219a52">🟢 Active</span>':'<span class="cycle-chip" style="background:#eef2f7;color:#2d5a8e">📅 Past</span>'}</td><td><strong>${fmtEff(v.efforts)}</strong><span class="eff-bar-wrap" style="margin-left:6px"><span class="eff-bar" style="width:${pct}%;background:${bc}"></span></span></td><td>${v.tasks}</td><td><div class="cycle-res-row">${pills}</div></td>`;
+    ctbody.appendChild(tr);
+  });
+
+  // ── S8: Resource cards ────────────────────────────────────────────────────────
+  const resGrid=document.getElementById('res-grid');
+  resList.forEach((res,i)=>{
+    const col=RES_COLORS[i%RES_COLORS.length],ini=shortName(res.name).split(' ').map(n=>n[0]||'').join('').toUpperCase().substring(0,2)||'?',avg=res.tasks>0?Math.round(res.efforts/res.tasks):0;
+    const sTags=Object.entries(res.stages).map(([s,c])=>{const sc=STAGE_COLORS[s]||'#95a5a6';return`<span class="s-tag" style="background:${sc}20;color:${sc};border:1px solid ${sc}50">${esc(s)} (${c})</span>`;}).join('');
+    const platTagsHtml=Object.entries(res.platforms).map(([p,c])=>{const pc=PLAT_COLORS[p]||'#888';return`<span class="plat-tag" style="background:${pc}20;color:${pc};border:1px solid ${pc}50">${esc(p)} (${c})</span>`;}).join('');
+    const ttRows=Object.entries(res.taskTypes).map(([t,c])=>`<div class="tt-row"><span>${esc(t)}</span><strong>${c}</strong></div>`).join('');
+    const cycRows=Object.entries(res.cycles).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,cd])=>{const ia=k===activeCycleKey;return`<div class="tt-row"><span title="${cd.period}">${ia?'🟢 ':'📅 '}<strong>${cd.label}</strong></span><span>${fmtEff(cd.efforts)} · ${cd.tasks}t</span></div>`;}).join('');
+    const card=document.createElement('div');card.className='res-card';
+    card.innerHTML=`<div class="res-card-head" style="background:linear-gradient(135deg,${col},${col}cc)"><div class="res-avatar">${ini}</div><div><div class="res-name">${esc(shortName(res.name))}</div><div class="res-sub">${res.tasks} task${res.tasks!==1?'s':''} · ${Object.keys(res.dailyEfforts).length} cycle${Object.keys(res.dailyEfforts).length!==1?'s':''}</div></div></div>
+    <div class="res-card-body"><div class="res-stats"><div class="res-stat"><div class="res-stat-val" style="color:${col}">${fmtEff(res.efforts)}</div><div class="res-stat-lbl">Total Effort</div></div><div class="res-stat"><div class="res-stat-val" style="color:${col}">${res.tasks}</div><div class="res-stat-lbl">Tasks</div></div><div class="res-stat"><div class="res-stat-val" style="color:${col}">${fmtEff(avg)}</div><div class="res-stat-lbl">Avg/Task</div></div></div>${platTagsHtml?`<div class="mini-lbl">Platform</div><div class="plat-tags">${platTagsHtml}</div>`:''}<div class="mini-lbl" style="margin-top:10px">Stages</div><div class="stage-tags">${sTags||'<span style="color:#ccc;font-size:11px">No data</span>'}</div>${ttRows?`<div class="mini-lbl" style="margin-top:10px">Task Types</div><div>${ttRows}</div>`:''}${cycRows?`<div class="mini-lbl" style="margin-top:10px">Cycles (hover for period)</div><div>${cycRows}</div>`:''}</div>`;
+    resGrid.appendChild(card);
+  });
+
+  // ── S9: Awards ────────────────────────────────────────────────────────────────
+  const awardsGrid=document.getElementById('awards-grid');
+  otherAwards.forEach(a=>{
+    const card=document.createElement('div');card.className='award-card';
+    card.innerHTML=`<div class="award-emoji">${a.emoji}</div><div class="award-title">${esc(a.title)}</div><div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px">${esc(a.desc)}</div>${a.w?`<div class="award-winner">${esc(shortName(a.w.name))}</div><div class="award-value">${esc(a.val)}</div>`:'<div style="color:rgba(255,255,255,.3);font-size:12px">—</div>'}`;
+    awardsGrid.appendChild(card);
+  });
+}
+
+// ── Individual cycle chart (lazy) ──────────────────────────────────────────────
+function buildDwPersonChart(i,res,allDates,cycleDayLabels,col){
+  const canvas=document.getElementById(`c-dw-${i}`);if(!canvas)return;
+  const personDaily=allDates.map(d=>res.dailyEfforts[d]||0);
+  const avg=personDaily.length>0?Math.round(personDaily.reduce((s,v)=>s+v,0)/allDates.length):0;
+  charts[`dw-${i}`]=new Chart(canvas,{plugins:[ChartDataLabels],data:{labels:cycleDayLabels,datasets:[
+    {type:'bar',label:'Efforts',data:personDaily,backgroundColor:col+'99',borderColor:col,borderWidth:2,borderRadius:7,order:2,datalabels:{anchor:'end',align:'end',offset:3,font:{size:10,weight:'700'},color:col,backgroundColor:'rgba(255,255,255,.88)',borderRadius:5,padding:{top:2,bottom:2,left:5,right:5},borderWidth:1,borderColor:col+'44',formatter:v=>v>0?fmtEffShort(v):null}},
+    {type:'line',label:`Avg (${fmtEff(avg)})`,data:allDates.map(()=>avg),borderColor:'#ef4444',borderWidth:2,borderDash:[7,4],pointRadius:0,fill:false,order:1,datalabels:{display:false}}
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:32}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label.startsWith('Avg')?c.dataset.label:`Effort: ${fmtEff(c.raw)}`}}},scales:{y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#444',font:{size:10}}}}}});
+  const activeDays=personDaily.filter(v=>v>0).length,peakIdx=personDaily.indexOf(Math.max(...personDaily));
+  document.getElementById(`dw-mini-${i}`).innerHTML=`<div class="dw-mini"><div class="dw-mini-val">${fmtEff(res.efforts)}</div><div class="dw-mini-lbl">Total</div></div><div class="dw-mini"><div class="dw-mini-val">${fmtEff(avg)}</div><div class="dw-mini-lbl">Avg/Cycle</div></div><div class="dw-mini"><div class="dw-mini-val">${allDates[peakIdx]?`${getDayName(allDates[peakIdx])} ${allDates[peakIdx].slice(5)}`:'—'}</div><div class="dw-mini-lbl">Peak Cycle</div></div><div class="dw-mini"><div class="dw-mini-val">${activeDays}</div><div class="dw-mini-lbl">Active Cycles</div></div>`;
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-upload-trigger').addEventListener('click',()=>document.getElementById('file-input-btn').click());
+document.getElementById('file-input-btn').addEventListener('change',function(){if(this.files[0]){processFile(this.files[0]);this.value='';}});
+document.getElementById('file-input-dz').addEventListener('change',function(){if(this.files[0]){processFile(this.files[0]);this.value='';}});
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);});
+document.getElementById('modal-confirm-btn').addEventListener('click',confirmImport);
+document.getElementById('modal-cancel-btn').addEventListener('click',closeModal);
+document.getElementById('modal-close-btn').addEventListener('click',closeModal);
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('btn-add').addEventListener('click',()=>addRow({},'manual'));
+document.getElementById('btn-clear').addEventListener('click',()=>{document.getElementById('tbl-body').innerHTML='';updateCount();checkEmpty();});
+document.getElementById('btn-gen').addEventListener('click',()=>{document.getElementById('sheet-report').classList.add('active');document.getElementById('sheet-data').classList.remove('active');document.getElementById('btn-tab-report').classList.add('active');document.getElementById('btn-tab-data').classList.remove('active');buildReport();});
+document.getElementById('btn-tab-data').addEventListener('click',function(){document.getElementById('sheet-data').classList.add('active');document.getElementById('sheet-report').classList.remove('active');this.classList.add('active');document.getElementById('btn-tab-report').classList.remove('active');});
+document.getElementById('btn-tab-report').addEventListener('click',function(){document.getElementById('sheet-report').classList.add('active');document.getElementById('sheet-data').classList.remove('active');this.classList.add('active');document.getElementById('btn-tab-data').classList.remove('active');buildReport();});
+
+// ── ✅ Updated header: shows cycle name + time window ─────────────────────────
+function updateHeaderCycle(){
+  const ac=getActiveCycle();
+  document.getElementById('active-cycle-hdr').textContent=`${formatCycleLabel(ac)} Cycle  ·  6:31 AM → 6:30 AM`;
+}
+updateHeaderCycle();checkEmpty();
+</script>
+
+</body></html>
